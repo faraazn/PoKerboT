@@ -34,9 +34,9 @@ def pair(hand, table, toss):
         toss[1] -= 45
     else:  # bad two pairs at best
         if multiplicity(hand + table, hand[0]) == 2:
-            toss[0] -= hand[0][1]
+            toss[0] -= hand[0][1] + 1
         if multiplicity(hand + table, hand[1]) == 2:
-            toss[1] -= hand[1][1]
+            toss[1] -= hand[1][1] + 1
     return toss
 
 
@@ -156,7 +156,7 @@ def play(deck):
         table = deck[2:6 + ind]
     # print(hand)
     # print(table)
-    return handcode(hand + table)
+    return hand + table
 
 
 def simulate():
@@ -167,7 +167,7 @@ def simulate():
             deck.append((ind1, ind2))
     codes = [0] * 9
     for _ in range(10 ** 6):
-        codes[play(deck)] += 1
+        codes[handcode(play(deck))] += 1
     print([c / 10 ** 4 for c in codes])
 
-simulate()
+# simulate()
