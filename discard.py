@@ -61,16 +61,16 @@ def flopflush(board, hole, utility):
         elif hole[1][0] == suit:  # flush draw (one free)
             utility[0] -= 80
         else:  # two off from flush (two free)
-            utility[0] -= 5
-            utility[1] -= 5
+            utility[0] -= 10
+            utility[1] -= 10
     elif potential == 2:
         if hole[0][0] == suit and hole[1][0] == suit:  # flush draw (zero free)
-            utility[0] += 40
-            utility[1] += 40
+            utility[0] += 80
+            utility[1] += 80
         elif hole[0][0] == suit:  # two off from flush (one free)
-            utility[1] -= 5
+            utility[1] -= 10
         elif hole[1][0] == suit:  # two off from flush (one free)
-            utility[0] -= 5
+            utility[0] -= 10
     return utility
 
 
@@ -79,37 +79,46 @@ def valuemult(cards, card):
     return len([c for c in cards if c[1] == card[1]])
 
 
-def valuedistro(board, hole=None):
-    """Splits up the cards by value"""
+def valuedistro(board, hole):
+    """Splits up the cards by value, with multiplicity"""
     distro = [0] * 13
+    distro[hole[0][1]] += 0.6  # distinguishes hole cards
+    distro[hole[1][1]] += 0.8
     for card in board:
         distro[card[1]] += 1
+    return distro
+
+
+def straightdistro(board, hole=None):
+    """Splits up the cards by value, no multiplicity"""
+    distro = [0] * 13
     if hole is not None:
-        distro[hole[0][1]] += 0.6  # distinguishes hole cards
-        distro[hole[1][1]] += 0.8
+        distro[hole[0][1]] = 0.6
+        distro[hole[1][1]] = 0.8
+    for card in board:
+        distro[card[1]] = 1
+    distro.insert(0, distro[-1])  # aces can be low or high
     return distro
 
 
 def straightval(cards):
     """Checks for existence and value of straight"""
-    distro = valuedistro(cards)
-    distro.insert(0, distro[-1])  # aces can be low or high
+    distro = straightdistro(cards)
     for ind in range(9, -1, -1):
         test = sum(distro[ind:ind + 5])
-        if test >= 5:
+        if test == 5:
             return ind + 1
     return 0
 
 
 def straightpotential(board, hole):
     """Differentiates types of straights"""
-    distro = valuedistro(board, hole)
-    distro.insert(0, distro[-1])  # aces can be low or high
+    distro = straightdistro(board, hole)
     best = 0
     for ind in range(10):
         test = sum(distro[ind:ind + 5])
         inner = ((ind != 0 or distro[ind] == 0) and
-                 (ind != 9 or distro[ind + 4] == 0))
+                 (ind != 9 or distro[ind + 4] == 0)) or test > 4
         if (test > 3 and inner and distro[ind + 1] > 0 and
                 distro[ind + 2] > 0 and distro[ind + 3] > 0):
             test += 1  # distinguishes open and closed straight draws
@@ -131,12 +140,12 @@ def flopstraight(board, hole, utility):
         utility[0] += 100
         utility[1] += 100
     elif potential > 4.5:  # open straight draw (one free)
-        utility[int(potential < 4.7)] -= 60
+        utility[int(potential < 4.7)] -= 40
     elif potential > 4:  # open straight draw (zero free)
-        utility[0] += 25
-        utility[1] += 25
+        utility[0] += 40
+        utility[1] += 40
     elif potential > 3.5:  # closed straight draw (one free)
-        utility[int(potential < 3.7)] -= 25
+        utility[int(potential < 3.7)] -= 40
     elif potential > 3:  # closed straight draw (zero free)
         utility[0] += 5
         utility[1] += 5
@@ -145,7 +154,7 @@ def flopstraight(board, hole, utility):
 
 def messypair(spec, board, hole, utility, safety):
     """Sorts out messy two pair and pair hands"""
-    if spec == 2:
+    if spec > 1.9:
         return utility
     util = hole[0][1]
     if spec > 1.7:
@@ -155,8 +164,8 @@ def messypair(spec, board, hole, utility, safety):
     if spec > 1.5:
         utility[int(spec > 1.7)] += util  # yes this should be >
     else:
-        utility[0] += util - 5
-        utility[1] += util - 5
+        utility[0] += util #- 5
+        utility[1] += util #- 5
     return utility
 
 
@@ -175,7 +184,7 @@ def flopthrees(specs, utility):
     if specs[1] > 1:  # full house
         utility[0] += 100
         utility[1] += 100
-    elif specs[0] == 3:  # three of a kind
+    elif specs[0] > 2.9:  # three of a kind
         utility[0] -= 5
         utility[1] -= 5
     elif specs[0] > 2.5:
@@ -188,7 +197,7 @@ def flopthrees(specs, utility):
 
 def floptwos(specs, board, hole, utility, safety):
     """Two pair, pair"""
-    if specs[0] == 2 and specs[1] > 1.5:  # two pair
+    if specs[0] > 1.9 and specs[1] > 1.5:  # two pair
         utility[int(specs[1] < 1.7)] -= 100
     elif specs[1] > 1:
         utility[0] += 100
@@ -242,16 +251,17 @@ def flop(board, hole, safety):
 def freedomflush(board, hole, utility, suit):
     """Flush with freedom, flush, flush draw (two free)"""
     if hole[0][0] == suit and hole[1][0] == suit:  # flush with freedom
-        newpot = straightpotential(board, hole)
+        pot = straightpotential(board, hole)
         split = sorted([hole[0][1], hole[1][1]])
-        if newpot > 5.5:  # straight flush
-            utility[int(newpot < 5.7)] -= 200  # to bluff a weaker hand
-        elif newpot > 5.0:
+        if pot > 5.5:  # straight flush
+            utility[int(pot < 5.7)] -= 200  # to bluff a weaker hand
+        elif pot > 5:
             utility[0] += 200
             utility[1] += 200
-        elif (newpot - int(newpot) > 0.5 and abs(hole[0][1] - hole[1][1]) ==
-              len([c for c in board if split[0] < c[1] < split[1]]) + 1):
-            utility[int(newpot - int(newpot) < 0.7)] -= 200
+        elif (pot - int(pot) > 0.5 and abs(hole[0][1] - hole[1][1]) ==
+              len([c for c in board if split[0] < c[1] and
+                   c[1] < split[1]]) + 1):
+            utility[int(pot - int(pot) < 0.7)] -= 200
             # hole cards are equivalent; go for the straight flush
         else:
             utility[int(hole[0][1] > hole[1][1])] -= 200
@@ -284,15 +294,20 @@ def turnflush(board, hole, utility):
             utility[0] += 200
             utility[1] += 200
         elif hole[0][0] == suit:  # flush draw (one free)
-            utility[0] += 60
-            utility[1] -= 40
+            utility[1] -= 80
         elif hole[1][1] == suit:  # flush draw (one free)
-            utility[0] -= 40
-            utility[1] += 60
+            utility[0] -= 80
+        else:  # two off from flush (two free)
+            utility[0] -= 10
+            utility[1] -= 10
     elif potential == 2:
-        if hole[0][0] == suit and hole[1][0] == suit:  # flush draw (zero free)
-            utility[0] += 60
-            utility[1] += 60
+        if max(suitdistro(board + hole)) == 4:  # flush draw (zero free)
+            utility[0] += 85
+            utility[1] += 85
+        if suitmult(board, hole[0]) == 2:  # two off from flush (one free)
+            utility[1] -= 10
+        if suitmult(board, hole[1]) == 2:  # two off from flush (one free)
+            utility[0] -= 10
     return utility
 
 
@@ -303,30 +318,18 @@ def freedomstraight(board, hole, utility):
              straightval(board + hole)]
     suits = [suitmult(board, hole[0]), suitmult(board, hole[1])]
     if works[0] and works[1]:  # straight with freedom
-        if suits[0] == 2 and hole[0][0] == hole[1][0]:
-            utility[0] += 150
-            utility[1] += 150
-        elif suits[0] == 3 or suits[1] == 3 or works[0] == works[1]:
-            utility[int(suits[0] > suits[1])] -= 150
-        else:
-            utility[int(works[0] > works[1])] -= 150
+        utility[int(works[0] > works[1])] -= 40
     elif works[0]:
-        if ((suits[0] < 3 and works[2] > works[0]) or
-                (suits[0] == 2 and hole[0][0] == hole[1][0])):
-            utility[0] += 150
-            utility[1] += 150
-        else:
-            utility[1] -= 150
+        utility[0] += 100
+        if works[2] > works[0] or suitmult(board, hole[1]) == 3:
+            utility[1] += 5
     elif works[1]:
-        if ((suits[1] < 3 and works[2] > works[1]) or
-                (suits[0] == 2 and hole[0][0] == hole[1][0])):
-            utility[0] += 150
-            utility[1] += 150
-        else:
-            utility[0] -= 150
+        utility[1] += 100
+        if works[2] > works[1] or suitmult(board, hole[0]) == 3:
+            utility[0] += 5
     else:  # straight
-        utility[0] += 150
-        utility[1] += 150
+        utility[0] += 100
+        utility[1] += 100
     return utility
 
 
@@ -345,31 +348,30 @@ def turnstraight(board, hole, utility):
     potential = straightpotential(board, hole)
     if potential > 5:
         utility = freedomstraight(board, hole, utility)
-    elif potential == 5:  # open straight draw (two free)
+    elif potential > 4.9:  # open straight draw (two free)
         utility[0] -= 40
         utility[1] -= 40
     elif potential > 4.5:  # open straight draw (one free)
-        utility[int(potential > 4.7)] += 60
         utility[int(potential < 4.7)] -= 40
     elif potential > 4:  # open straight draw (zero free)
-        utility[0] += 60
-        utility[1] += 60
-    elif potential == 4:  # closed straight draw (two free)
+        utility[0] += 40
+        utility[1] += 40
+    elif potential > 3.9:  # closed straight draw (two free)
         utility[0] -= 10
         utility[1] -= 10
     elif potential > 3.5:  # closed straight draw (one free)
         utility[int(potential < 3.7)] -= 10
     elif potential > 3:  # closed straight draw (zero free)
-        utility[0] += 5
-        utility[1] += 5
+        utility[0] += 10
+        utility[1] += 10
     return utility
 
 
 def turnfours(specs, hole, utility):
     """Four of a kind"""
-    if specs[0] == 4:
+    if specs[0] > 3.9:
         utility[int(hole[0][1] > hole[1][1])] -= 100
-    elif specs[0] > 3.7:
+    elif specs[0] > 3.5:
         utility[int(specs[0] < 3.7)] -= 100  # to bluff a weaker hand
     else:
         utility[0] += 100
@@ -387,16 +389,14 @@ def turnthrees(specs, board, hole, utility):
             utility[1] += 100
         else:
             utility[0] -= 100  # arbitrary
-    elif specs[1] > 1.5:
-        utility[int(specs[1] < 1.7)] -= 100
     elif specs[1] > 1:
         utility[0] += 100
         utility[1] += 100
-    elif specs[0] == 3:  # three of a kind
-        utility[0] -= 5
-        utility[1] -= 5
+    elif specs[0] > 2.9:  # three of a kind
+        utility[0] -= 10
+        utility[1] -= 10
     elif specs[0] > 2.5:
-        utility[int(specs[0] < 2.5)] -= 100
+        utility[int(specs[0] < 2.7)] -= 100
     else:
         utility[0] += 100
         utility[1] += 100
@@ -411,16 +411,18 @@ def turntwos(specs, board, hole, utility, safety):
         if hole[0][1] > min([c[1] for c in board]):
             utility[0] += 100
             utility[1] += 100
-        else:
-            utility[0] -= 100  # arbitrary
-    elif specs[0] == 2 and specs[1] == 2:  # two pair
-        utility[0] -= 5
-        utility[1] -= 5
+    elif specs[0] > 1.9 and specs[1] > 1.9:  # two pair
+        utility[0] -= 10
+        utility[1] -= 10
+    elif specs[0] > 1.9 and specs[1] > 1.5:  # two pair
+        utility[int(specs[1] < 1.7)] -= 100
     elif specs[1] > 1:
-        utility = messypair(specs[0], board, hole, utility, safety)
-        utility = messypair(specs[1], board, hole, utility, safety)
-        utility[0] += 30
-        utility[1] += 30
+        utility[0] += 100
+        utility[1] += 100
+        # utility = messypair(specs[0], board, hole, utility, safety)
+        # utility = messypair(specs[1], board, hole, utility, safety)
+        # utility[0] += 30
+        # utility[1] += 30
     else:  # pair
         utility = messypair(specs[0], board, hole, utility, safety)
     return utility
@@ -449,7 +451,7 @@ def turnpair(board, hole, utility, safety):
 def turn(board, hole, safety):
     """safety should be between 0.5 and 1.5"""
     utility = [0, 0]
-    utility = turnflush(board, hole, utility)
-    utility = turnstraight(board, hole, utility)
-    utility = turnpair(board, hole, utility, safety)
+    utility = flopflush(board, hole, utility)
+    utility = flopstraight(board, hole, utility)
+    utility = floppair(board, hole, utility, safety)
     return decide(board, hole, utility)

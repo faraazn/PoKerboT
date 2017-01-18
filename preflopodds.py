@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 ==================================================
-    Filename:   hands.py
+    Filename:   preflopodds.py
 
- Description:   Pre-flop hand odds
+ Description:   Pre-flop winning chances
 
      Version:   1.0
      Created:   2017-01-11
@@ -16,13 +16,14 @@
 """
 
 import random
-import hands
+import simplediscard
+import discard
 
 
 def winner(hand1, hand2):
     """True: hand1 wins"""
-    code1 = hands.handcode(hand1)
-    code2 = hands.handcode(hand2)
+    code1 = simplediscard.handcode(hand1)
+    code2 = simplediscard.handcode(hand2)
     if code1 > code2:
         return True
     if code1 < code2:
@@ -43,9 +44,9 @@ def twoplay(deck):
     hand, table = [deck[:2], deck[2:4]], deck[4:7]
     for ind1 in range(2):
         for ind2 in range(2):
-            toss = hands.flush(hand[ind2], table, [0, 0])
-            toss = hands.straight(hand[ind2], table, toss)
-            toss = hands.pair(hand[ind2], table, toss)
+            toss = simplediscard.flush(hand[ind2], table, [0, 0])
+            toss = simplediscard.straight(hand[ind2], table, toss)
+            toss = simplediscard.pair(hand[ind2], table, toss)
             if max(toss) >= 0:
                 if toss[0] == toss[1]:
                     hand[ind2][int(hand[ind2][0][1] > hand[ind2][1][1])] = \
@@ -57,15 +58,38 @@ def twoplay(deck):
     return hand[0] + table, hand[1] + table
 
 
-def preflop():
-    """Plays 10 ** 6 hands"""
+def twosmartplay(deck):
+    """Plays two hands with smarter discards"""
+    random.shuffle(deck)
+    board, hole = deck[4:7], [deck[:2], deck[2:4]]
+    for ind in range(2):
+        toss = discard.flop(board, hole[ind], 1)
+        if toss is not None:
+            if toss == hole[ind][0]:
+                hole[ind][0] = deck[9 + ind]
+            elif toss == hole[ind][1]:
+                hole[ind][1] = deck[9 + ind]
+    board = deck[4:8]
+    for ind in range(2):
+        toss = discard.turn(board, hole[ind], 1)
+        if toss is not None:
+            if toss == hole[ind][0]:
+                hole[ind][0] = deck[11 + ind]
+            elif toss == hole[ind][1]:
+                hole[ind][1] = deck[11 + ind]
+    board = deck[4:9]
+    return hole[0] + board, hole[1] + board
+
+
+def preflopodds():
+    """Plays 10 ** 5 hands"""
     deck = []
     for ind1 in range(4):
         for ind2 in range(13):
             deck.append((ind1, ind2))
     preflopping = [[[[0, 0], [0, 0]] for i in range(13)] for j in range(13)]
-    for _ in range(5 * 10 ** 5):
-        hand1, hand2 = twoplay(deck)
+    for _ in range(5 * 10 ** 4):
+        hand1, hand2 = twosmartplay(deck)
         if hand1[0][0] == hand1[1][0]:
             preflopping[hand1[0][1]][hand1[1][1]][1][1] += 1
             if winner(hand1, hand2):
@@ -86,4 +110,4 @@ def preflop():
                 line += str(ans).ljust(7)
             print(line)
 
-preflop()
+preflopodds()

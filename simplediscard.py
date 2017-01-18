@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 ==================================================
-    Filename:   hands.py
+    Filename:   simplediscard.py
 
- Description:   Likelihood of all hands
+ Description:   Old discard alg
 
      Version:   1.0
-     Created:   2017-01-11
+     Created:   2017-01-18
     Revision:   none
     Compiler:   python 3.5
 
@@ -138,36 +138,3 @@ def handcode(cards):
         if distro[1] == 2:
             code = 2
     return code
-
-
-def play(deck):
-    """Plays one hand with discards"""
-    random.shuffle(deck)
-    hand, table = deck[:2], deck[2:5]
-    for ind in range(2):
-        toss = flush(hand, table, [0, 0])  # higher means toss it
-        toss = straight(hand, table, toss)
-        toss = pair(hand, table, toss)
-        if max(toss) >= 0:
-            if toss[0] == toss[1]:
-                hand[int(hand[0][1] > hand[1][1])] = deck[7 + ind]
-            else:
-                hand[int(toss[0] < toss[1])] = deck[7 + ind]
-        table = deck[2:6 + ind]
-    # print(hand)
-    # print(table)
-    return hand + table
-
-
-def simulate():
-    """Plays 10 ** 6 hands"""
-    deck = []
-    for ind1 in range(4):
-        for ind2 in range(13):
-            deck.append((ind1, ind2))
-    codes = [0] * 9
-    for _ in range(10 ** 6):
-        codes[handcode(play(deck))] += 1
-    print([c / 10 ** 4 for c in codes])
-
-# simulate()
