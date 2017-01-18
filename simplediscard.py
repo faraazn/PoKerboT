@@ -15,8 +15,6 @@
 ==================================================
 """
 
-import random
-
 
 def multiplicity(cards, card):
     """Number of cards with the same value as card"""

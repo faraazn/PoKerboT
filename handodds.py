@@ -25,7 +25,7 @@ def play(deck):
     random.shuffle(deck)
     hand, table = deck[:2], deck[2:5]
     for ind in range(2):
-        toss = simplediscard.flush(hand, table, [0, 0])  # higher means toss it
+        toss = simplediscard.flush(hand, table, [0, 0])
         toss = simplediscard.straight(hand, table, toss)
         toss = simplediscard.pair(hand, table, toss)
         if max(toss) >= 0:
@@ -34,8 +34,6 @@ def play(deck):
             else:
                 hand[int(toss[0] < toss[1])] = deck[7 + ind]
         table = deck[2:6 + ind]
-    # print(hand)
-    # print(table)
     return hand + table
 
 

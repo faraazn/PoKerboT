@@ -1,6 +1,6 @@
-lint: handodds.py
-	-pylint --msg-template='{path}:{line}: {msg_id} {msg}' -r n handodds.py
-	-pep8 handodds.py
+lint: benchmark.py
+	-pylint --msg-template='{path}:{line}: {msg_id} {msg}' -r n benchmark.py
+	-pep8 benchmark.py
 
 run:
-	python3 handodds.py
+	python3 benchmark.py
