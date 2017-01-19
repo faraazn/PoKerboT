@@ -34,31 +34,27 @@ def run(input_socket):
             print('Gameover, engine disconnected')
             break
 
-        print(data)
+        # print(data)
 
         packet = data.split()
         if packet[0] == 'NEWGAME':
             name = packet[1]
-        if packet[0] == 'NEWHAND':
+        elif packet[0] == 'NEWHAND':
             hole = [baseline.totuple(packet[3]), baseline.totuple(packet[4])]
-            print(hole)
         if packet[0] == 'GETACTION':
             board, numboardcards = [], int(packet[2])
             for ind in range(numboardcards):
                 board.append(baseline.totuple(packet[3 + ind]))
-            print(board)
             lastactions, numlastactions = [], int(packet[3 + numboardcards])
             for ind in range(numlastactions):
                 lastactions.append(packet[4 + numboardcards + ind])
-            print(lastactions)
             legalactions, numlegalactions = [], int(packet[4 + numboardcards + numlastactions])
             for ind in range(numlegalactions):
                 legalactions.append(packet[5 + numboardcards + numlastactions + ind])
-            print(legalactions)
-            if lastactions[-1][14:] == name and lastactions[-1][:7] == 'DISCARD':
-                hole[hole.index(baseline.totuple(lastactions[-1][8:10]))] = baseline.totuple(lastactions[-1][11:13])
-                print(hole)
-            if 'DISCARD' in legalactions:
+            for action in lastactions:  # process each action
+                if action[:7] == 'DISCARD' and name in action:
+                    hole[hole.index(baseline.totuple(action[8:10]))] = baseline.totuple(action[11:13])
+            if 'DISCARD:' + baseline.tostr(hole[0]) in legalactions:
                 decision = None
                 if 'DEAL:TURN' in lastactions:
                     decision = discard.turn(board, hole, 1)
@@ -69,19 +65,18 @@ def run(input_socket):
                 else:
                     s.send('CHECK\n')
             elif 'CALL' in legalactions:
-                s.send('CALL\n')  # keep the game going
+                s.send('CALL\n')
             else:
                 s.send('CHECK\n')
         elif packet[0] == 'HANDOVER':
             board, numboardcards = [], int(packet[3])
             for ind in range(numboardcards):
                 board.append(baseline.totuple(packet[4 + ind]))
-            print(board)
             codes[discard.handcode(board + hole)] += 1
         elif packet[0] == 'REQUESTKEYVALUES':
             s.send('FINISH\n')
     s.close()
-    print([c * 100 / sum(c) for c in codes])
+    print([c / 100.0 for c in codes])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PKT pokerbot', add_help=False, prog='pokerbot')
