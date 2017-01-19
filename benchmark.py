@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 ==================================================
     Filename:   benchmark.py
@@ -59,17 +57,17 @@ def smartplay(deck):
 
 
 def benchmark():
-    """Plays 10 ** 6 hands"""
+    """Plays 10 ** 5 hands"""
     deck = []
     for ind1 in range(4):
         for ind2 in range(13):
             deck.append((ind1, ind2))
     codes = [0] * 9
     smartcodes = [0] * 9
-    for _ in range(10 ** 6):
-        codes[simplediscard.handcode(play(deck))] += 1
-        smartcodes[simplediscard.handcode(smartplay(deck))] += 1
-    print([c / 10 ** 4 for c in codes])
-    print([c / 10 ** 4 for c in smartcodes])
+    for _ in range(10 ** 5):
+        codes[discard.handcode(play(deck))] += 1
+        smartcodes[discard.handcode(smartplay(deck))] += 1
+    print([c / 10 ** 3 for c in codes])
+    print([c / 10 ** 3 for c in smartcodes])
 
 benchmark()

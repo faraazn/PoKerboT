@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 ==================================================
     Filename:   simplediscard.py
@@ -111,28 +109,3 @@ def distribution(cards):
         distro[card[1]] += 1
     distro = sorted(distro)
     return [distro.pop(), distro.pop()]
-
-
-def handcode(cards):
-    """High card: 0, pair: 1, etc"""
-    code = 0
-    distro = distribution(cards)
-    if flushcount(cards) >= 5:
-        code = 5
-        for ind in range(4):
-            suit = [c for c in cards if c[0] == ind]
-            if straightcount(suit) == 6:
-                code = 8
-    elif straightcount(cards) == 6:
-        code = 4
-    elif distro[0] == 4:
-        code = 7
-    elif distro[0] == 3:
-        code = 3
-        if distro[1] >= 2:
-            code = 6
-    elif distro[0] == 2:
-        code = 1
-        if distro[1] == 2:
-            code = 2
-    return code

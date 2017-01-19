@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 ==================================================
     Filename:   discardodds.py
@@ -75,7 +73,7 @@ def discardodds():
         tossed, cards = meta[0], meta[1]
         option = tossed[0] * 2 + tossed[1]
         discards[option][0] += 1
-        discards[option][1] += simplediscard.handcode(cards)
+        discards[option][1] += discard.handcode(cards)
     for data in discards:
         print(str(data[0] / 10 ** 3) + ': ' + str(data[1] / data[0]))
 

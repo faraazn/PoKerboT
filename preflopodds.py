@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 ==================================================
     Filename:   preflopodds.py
@@ -22,8 +20,8 @@ import discard
 
 def winner(hand1, hand2):
     """True: hand1 wins"""
-    code1 = simplediscard.handcode(hand1)
-    code2 = simplediscard.handcode(hand2)
+    code1 = discard.handcode(hand1)
+    code2 = discard.handcode(hand2)
     if code1 > code2:
         return True
     if code1 < code2:

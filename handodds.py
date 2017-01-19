@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 ==================================================
     Filename:   handodds.py
@@ -66,7 +64,7 @@ def handodds():
             deck.append((ind1, ind2))
     codes = [0] * 9
     for _ in range(10 ** 5):
-        codes[simplediscard.handcode(smartplay(deck))] += 1
+        codes[discard.handcode(smartplay(deck))] += 1
     print([c / 10 ** 3 for c in codes])
 
 handodds()

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 ==================================================
     Filename:   discard.py
@@ -79,11 +77,12 @@ def valuemult(cards, card):
     return len([c for c in cards if c[1] == card[1]])
 
 
-def valuedistro(board, hole):
+def valuedistro(board, hole=None):
     """Splits up the cards by value, with multiplicity"""
     distro = [0] * 13
-    distro[hole[0][1]] += 0.6  # distinguishes hole cards
-    distro[hole[1][1]] += 0.8
+    if hole is not None:
+        distro[hole[0][1]] += 0.6  # distinguishes hole cards
+        distro[hole[1][1]] += 0.8
     for card in board:
         distro[card[1]] += 1
     return distro
@@ -449,3 +448,31 @@ def turn(board, hole, safety):
     utility = turnstraight(board, hole, utility)
     utility = turnpair(board, hole, utility, safety)
     return decide(board, hole, utility)
+
+
+def handcode(cards):
+    """High card: 0, pair: 1, etc"""
+    code = 0
+    distro = sorted(valuedistro(cards))
+    specs = [distro.pop(), distro.pop()]
+    distro = suitdistro(cards)
+    potential = max(distro)
+    suit = distro.index(potential)
+    if potential >= 5:
+        code = 5
+        suited = [c for c in cards if c[0] == suit]
+        if straightval(suited):
+            code = 8
+    elif straightval(cards):
+        code = 4
+    elif specs[0] == 4:
+        code = 7
+    elif specs[0] == 3:
+        code = 3
+        if specs[1] >= 2:
+            code = 6
+    elif specs[0] == 2:
+        code = 1
+        if specs[1] == 2:
+            code = 2
+    return code
