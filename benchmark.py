@@ -41,14 +41,14 @@ def smartplay(deck):
     """Plays one hand with smart discards"""
     random.shuffle(deck)
     board, hole = deck[2:5], deck[:2]
-    toss = discard.flop(board, hole, 1)
+    toss = discard.flop(board, hole, 0)
     if toss is not None:
         if toss == hole[0]:
             hole[0] = deck[7]
         elif toss == hole[1]:
             hole[1] = deck[7]
     board = deck[2:6]
-    toss = discard.turn(board, hole, 1)
+    toss = discard.turn(board, hole, 0)
     if toss is not None:
         if toss == hole[0]:
             hole[0] = deck[8]

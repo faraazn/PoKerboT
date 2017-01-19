@@ -160,7 +160,7 @@ def messypair(spec, board, hole, utility, safety):
     if spec > 1.7:
         util = hole[1][1]
     status = len([c for c in board if c[1] < util])
-    util = (util + 1 + status) * safety
+    util += status + safety
     if spec > 1.5:
         utility[int(spec > 1.7)] += util  # yes this should be >
     else:
@@ -240,7 +240,7 @@ def decide(board, hole, utility):
 
 
 def flop(board, hole, safety):
-    """safety should be between 0.5 and 1.5"""
+    """safety = 1 is the default"""
     utility = [0, 0]  # keeps track of importance of hole cards
     utility = flopflush(board, hole, utility)
     utility = flopstraight(board, hole, utility)
@@ -443,7 +443,7 @@ def turnpair(board, hole, utility, safety):
 
 
 def turn(board, hole, safety):
-    """safety should be between 0.5 and 1.5"""
+    """safety = 1 is the default"""
     utility = [0, 0]
     utility = turnflush(board, hole, utility)
     utility = turnstraight(board, hole, utility)
