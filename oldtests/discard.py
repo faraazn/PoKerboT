@@ -125,7 +125,7 @@ def straightpotential(board, hole):
     return best
 
 
-def flopstraight(board, hole, utility):
+def flopstraight(board, hole, utility, safety):
     """
     Hands to be considered:
     straight
@@ -144,10 +144,10 @@ def flopstraight(board, hole, utility):
         utility[0] += 40
         utility[1] += 40
     elif potential > 3.5:  # closed straight draw (one free)
-        utility[int(potential < 3.7)] -= 20  # -= 40
+        utility[int(potential < 3.7)] -= 20
     elif potential > 3:  # closed straight draw (zero free)
-        utility[0] += 8
-        utility[1] += 8
+        utility[0] += 8 - safety
+        utility[1] += 8 - safety
     return utility
 
 
@@ -242,7 +242,7 @@ def flop(board, hole, safety):
     """safety = 1 is the default"""
     utility = [0, 0]  # keeps track of importance of hole cards
     utility = flopflush(board, hole, utility)
-    utility = flopstraight(board, hole, utility)
+    utility = flopstraight(board, hole, utility, safety)
     utility = floppair(board, hole, utility, safety)
     return decide(board, hole, utility)
 
@@ -335,7 +335,7 @@ def freedomstraight(board, hole, utility):
     return utility
 
 
-def turnstraight(board, hole, utility):
+def turnstraight(board, hole, utility, safety):
     """
     Hands to be considered:
     straight with freedom
@@ -359,13 +359,13 @@ def turnstraight(board, hole, utility):
         utility[0] += 40
         utility[1] += 40
     elif potential > 3.9:  # closed straight draw (two free)
-        utility[0] -= 20  # -= 40
-        utility[1] -= 20  # -= 40
+        utility[0] -= 20
+        utility[1] -= 20
     elif potential > 3.5:  # closed straight draw (one free)
-        utility[int(potential < 3.7)] -= 20  # -= 40
+        utility[int(potential < 3.7)] -= 20
     elif potential > 3:  # closed straight draw (zero free)
-        utility[0] += 8
-        utility[1] += 8
+        utility[0] += 8 - safety
+        utility[1] += 8 - safety
     return utility
 
 
@@ -445,7 +445,7 @@ def turn(board, hole, safety):
     """safety = 1 is the default"""
     utility = [0, 0]
     utility = turnflush(board, hole, utility)
-    utility = turnstraight(board, hole, utility)
+    utility = turnstraight(board, hole, utility, safety)
     utility = turnpair(board, hole, utility, safety)
     return decide(board, hole, utility)
 
