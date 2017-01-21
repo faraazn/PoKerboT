@@ -1,1 +1,1 @@
-python PoKerboT.py %1
+python3 PoKerboT.py %1

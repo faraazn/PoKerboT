@@ -1,1 +1,1 @@
-python PoKerboT.py "$@"
+python3 PoKerboT.py "$@"

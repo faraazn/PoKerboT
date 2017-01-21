@@ -18,6 +18,7 @@
 
 import argparse
 import socket
+import pickle
 import baseline
 import discard
 
@@ -26,8 +27,9 @@ def run(input_socket):
     """NLHE Hold'em with discards"""
     f_in = input_socket.makefile()
     name = ''
-    board, hole, lastactions, legalactions = [], [], [], []
-    codes = [0] * 9
+    ev = {}
+    loop = 0
+    board, hole, lastactions, legalactions, keys = [], [], [], [], []
     while True:
         data = f_in.readline().strip()
         if not data:
@@ -39,8 +41,10 @@ def run(input_socket):
         packet = data.split()
         if packet[0] == 'NEWGAME':
             name = packet[1]
+            with open(name + '.pickle', 'rb') as handle:
+                ev = pickle.load(handle)
         elif packet[0] == 'NEWHAND':
-            hole = [baseline.totuple(packet[3]), baseline.totuple(packet[4])]
+            hole, keys = [baseline.totuple(packet[3]), baseline.totuple(packet[4])], []
         if packet[0] == 'GETACTION':
             board, numboardcards = [], int(packet[2])
             for ind in range(numboardcards):
@@ -54,29 +58,51 @@ def run(input_socket):
             for action in lastactions:  # process each action
                 if action[:7] == 'DISCARD' and name in action:
                     hole[hole.index(baseline.totuple(action[8:10]))] = baseline.totuple(action[11:13])
+            if 'DEAL:FLOP' in lastactions or 'DEAL:TURN' in lastactions or 'DEAL:RIVER' in lastactions:
+                keys.append((tuple(sorted([c[1] for c in board])), tuple(sorted([c[1] for c in hole])), baseline.flushcode(board, hole)))
             if 'DISCARD:' + baseline.tostr(hole[0]) in legalactions:
                 decision = None
-                if 'DEAL:TURN' in lastactions:
-                    decision = discard.turn(board, hole, 1)
-                elif 'DEAL:FLOP' in lastactions:
+                if 'DEAL:FLOP' in lastactions:
                     decision = discard.flop(board, hole, 1)
+                elif 'DEAL:TURN' in lastactions:
+                    decision = discard.turn(board, hole, 1)
                 if decision is not None:
-                    s.send('DISCARD:' + baseline.tostr(decision) + '\n')
+                    s.send(('DISCARD:' + baseline.tostr(decision) + '\n').encode())
                 else:
-                    s.send('CHECK\n')
+                    s.send(b'CHECK\n')
             elif 'CALL' in legalactions:
-                s.send('CALL\n')
+                s.send(b'CALL\n')
             else:
-                s.send('CHECK\n')
+                s.send(b'CHECK\n')
         elif packet[0] == 'HANDOVER':
             board, numboardcards = [], int(packet[3])
             for ind in range(numboardcards):
                 board.append(baseline.totuple(packet[4 + ind]))
-            codes[discard.handcode(board + hole)] += 1
+            lastactions, numlastactions = [], int(packet[4 + numboardcards])
+            for ind in range(numlastactions):
+                lastactions.append(packet[5 + numboardcards + ind])
+            for action in lastactions:
+                if action[:3] == 'WIN':
+                    for key in keys:
+                        if name in action:
+                            ev[key][0] += 1
+                        ev[key][1] += 1
+                    break
+                elif action[:3] == 'TIE':
+                    for key in keys:
+                        ev[key][0] += 1
+                        ev[key][1] += 2
+                    break
+            if loop > 100000:
+                with open(name + '.pickle', 'wb') as handle:
+                    pickle.dump(ev, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                loop = 0
         elif packet[0] == 'REQUESTKEYVALUES':
-            s.send('FINISH\n')
+            with open(name + '.pickle', 'wb') as handle:
+                pickle.dump(ev, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            s.send(b'FINISH\n')
+        loop += 1
     s.close()
-    print([c / 100.0 for c in codes])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PKT pokerbot', add_help=False, prog='pokerbot')
