@@ -13,18 +13,29 @@
 ==================================================
 """
 
+from collections import Counter
 import pickle
 import baseline
 
 
 def ping():
-    """Checks how hero.pickle, villain.pickle look"""
+    """Checks how ev.pickle looks"""
+    with open('ev.pickle', 'rb') as handle:
+        ev = pickle.load(handle)
+    print(Counter([v[1] for v in ev.values()]))
+
+
+def combine():
+    """Combines hero.pickle and villain.pickle"""
     with open('hero.pickle', 'rb') as handle:
         ev = pickle.load(handle)
-    print(set([tuple(v) for v in ev.values()]))
     with open('villain.pickle', 'rb') as handle:
-        ev = pickle.load(handle)
-    print(set([tuple(v) for v in ev.values()]))
+        ev2 = pickle.load(handle)
+    for key in ev:
+        ev[key][0] += ev2[key][0]
+        ev[key][1] += ev2[key][1]
+    with open('ev.pickle', 'wb') as handle:
+        pickle.dump(ev, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def reset():
