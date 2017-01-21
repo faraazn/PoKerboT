@@ -28,15 +28,12 @@ def run(input_socket):
     f_in = input_socket.makefile()
     name = ''
     ev = {}
-    loop = 0
     board, hole, lastactions, legalactions, keys = [], [], [], [], []
     while True:
         data = f_in.readline().strip()
         if not data:
             print('Gameover, engine disconnected')
             break
-
-        # print(data)
 
         packet = data.split()
         if packet[0] == 'NEWGAME':
@@ -45,7 +42,7 @@ def run(input_socket):
                 ev = pickle.load(handle)
         elif packet[0] == 'NEWHAND':
             hole, keys = [baseline.totuple(packet[3]), baseline.totuple(packet[4])], []
-        if packet[0] == 'GETACTION':
+        elif packet[0] == 'GETACTION':
             board, numboardcards = [], int(packet[2])
             for ind in range(numboardcards):
                 board.append(baseline.totuple(packet[3 + ind]))
@@ -93,15 +90,10 @@ def run(input_socket):
                         ev[key][0] += 1
                         ev[key][1] += 2
                     break
-            if loop > 100000:
-                with open(name + '.pickle', 'wb') as handle:
-                    pickle.dump(ev, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                loop = 0
         elif packet[0] == 'REQUESTKEYVALUES':
             with open(name + '.pickle', 'wb') as handle:
                 pickle.dump(ev, handle, protocol=pickle.HIGHEST_PROTOCOL)
             s.send(b'FINISH\n')
-        loop += 1
     s.close()
 
 if __name__ == '__main__':

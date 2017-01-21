@@ -39,10 +39,11 @@ def flushcode(board, hole):
     distro = discard.suitdistro(board)
     potential = max(distro)
     suit = distro.index(potential)
+    suit2 = 3 - distro[::-1].index(potential)
     if potential >= 2:
         code = 4 * (potential - 2)
-        if hole[0][0] == suit:
+        if hole[0][0] == suit or hole[0][0] == suit2:
             code += 1 + int(hole[0][1] > hole[1][1])
-        if hole[1][0] == suit:
-            code += 1 + int(hole[0][1] > hole[1][1])
+        if hole[1][0] == suit or hole[1][0] == suit2:
+            code += 1 + int(hole[0][1] < hole[1][1])
     return code
